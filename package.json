@@ -1,0 +1,35 @@
+{
+	"name": "falbot",
+	"version": "2.11.1",
+	"description": "https://falbot.netlify.app/",
+	"main": "./src/index.js",
+	"scripts": {
+		"start": "node --env-file=.env ./src/index",
+		"prepare": "husky install"
+	},
+	"lint-staged": {
+		"src/**/*.js": [
+			"prettier --write",
+			"eslint --fix"
+		]
+	},
+	"author": "Falcão",
+	"license": "GNU 3.0",
+	"dependencies": {
+		"discord.js": "^14.17.3",
+		"dotenv": "^17.3.1",
+		"falgames": "^1.2.0",
+		"mongodb": "^7.1.0",
+		"mongoose": "^6.13.6",
+		"numerize": "^1.0.1",
+		"simply-blackjack": "^1.0.3"
+	},
+	"devDependencies": {
+		"eslint": "^8.57.1",
+		"eslint-config-prettier": "^8.10.0",
+		"eslint-plugin-prettier": "^5.2.2",
+		"husky": "^8.0.0",
+		"lint-staged": "^13.3.0",
+		"prettier": "^3.4.2"
+	}
+}
