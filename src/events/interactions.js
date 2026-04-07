@@ -1,4 +1,4 @@
-const { resolveCooldown, msToTime, setCooldown } = require('../utils/functions.js');
+const { resolveCooldown, msToTime, setCooldown, isUsernameAsciiAlnum, detectInvalidCharType, isAccountLegacy, accountAgeInDays } = require('../utils/functions.js');
 
 module.exports = {
 	name: 'interactionCreate',
@@ -24,6 +24,29 @@ module.exports = {
 		if (interaction.isChatInputCommand() || interaction.isContextMenuCommand()) {
 			const command = client.commands.get(interaction.commandName);
 
+			// Security validation: block usernames that are not basic ASCII alphanumeric
+			const username = interaction.user && interaction.user.username ? interaction.user.username : '';
+			if (!isUsernameAsciiAlnum(username)) {
+				const type = detectInvalidCharType(username);
+				console.warn(`Security block: user ${interaction.user.id} username "${username}" blocked due to ${type}`);
+				await interaction.reply({
+					content:
+						"⚠️ Erro de Segurança: Seu nome de usuário contém caracteres não suportados (acentos ou símbolos). Para garantir a integridade do banco de dados, apenas nomes no padrão ASCII básico podem resgatar Falcoins.",
+					ephemeral: true,
+				});
+				return;
+			}
+
+			// Anti-Sybil: only legacy accounts (>= 1095 days) can use economy commands
+			if (command && command.category === 'economy') {
+				if (!isAccountLegacy(interaction.user)) {
+					return interaction.reply({
+						content:
+							'🛡️ **Proteção Anti-Farm**: Para manter a economia do servidor estável e evitar operações de Sybil (contas descartáveis), apenas contas Legadas (com mais de 3 anos de registro no Discord) são elegíveis para resgatar Falcoins.',
+						ephemeral: true,
+					});
+				}
+			}
 			if (command.cooldown) {
 				cooldown = await resolveCooldown(interaction.user.id, interaction.commandName);
 				if (cooldown > 0) {

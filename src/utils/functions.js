@@ -2,6 +2,74 @@ const userSchema = require('../schemas/user.js');
 const { ActionRowBuilder, ButtonBuilder, GuildMember } = require('discord.js');
 
 /**
+ * @description Checks if a username contains only ASCII alphanumeric characters
+ * Accepts: A-Z a-z 0-9
+ * Rejects: any character with code > 127 or anything not in [A-Za-z0-9]
+ * @param {string} username
+ * @returns {boolean}
+ */
+function isUsernameAsciiAlnum(username) {
+	if (!username || typeof username !== 'string') return false;
+	return /^[A-Za-z0-9]+$/.test(username);
+}
+
+/**
+ * @description Attempts to categorize the first invalid character in a username.
+ * Returns a short string describing the detected type: 'accented', 'emoji', 'non-latin', 'symbol', 'space', or 'other'.
+ * This is a heuristic to aid logging/auditing and is intentionally conservative.
+ * @param {string} username
+ * @returns {string}
+ */
+function detectInvalidCharType(username) {
+	if (!username || typeof username !== 'string') return 'empty';
+	for (const ch of username) {
+		if (/^[A-Za-z0-9]$/.test(ch)) continue;
+
+		// ASCII but not alnum -> symbol or space
+		const code = ch.codePointAt(0);
+		if (code <= 127) {
+			if (ch === ' ') return 'space';
+			return 'symbol';
+		}
+
+		// Non-ASCII: try to detect Latin script with diacritics
+		try {
+			if (/\p{Script=Latin}/u.test(ch) && /\p{Letter}/u.test(ch)) return 'accented';
+		} catch (e) {
+			// If the JS runtime doesn't support Unicode property escapes, fall back
+		}
+
+		// Emoji ranges (heuristic)
+		if (/[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1F600}-\u{1F64F}]/u.test(ch)) return 'emoji';
+
+		// If it's a letter but not latin, call it non-latin
+		try {
+			if (/\p{Letter}/u.test(ch)) return 'non-latin';
+		} catch (e) {}
+
+		return 'other';
+	}
+	return 'other';
+}
+
+/**
+ * @description Verifica se a conta do usuário tem o tempo mínimo (Legacy)
+ * @param {Object} user - Objeto do usuário do Discord
+ * @param {number} minDays - Dias mínimos (Padrão: 3 anos / 1095 dias)
+ * @returns {boolean}
+ */
+function isAccountLegacy(user, minDays = 1095) {
+    if (!user || !user.createdAt) return false;
+    
+    const nowMs = Date.now();
+    const createdAtMs = new Date(user.createdAt).getTime();
+    const ageMs = nowMs - createdAtMs;
+    const ageDays = ageMs / (1000 * 60 * 60 * 24);
+
+    return ageDays >= minDays;
+}
+
+/**
  * @param {integer} ms
  * @description Converts milliseconds to a string with the format "1m 1d 1h 1m 1s"
  * @example msToTime(1000) // 1s
@@ -294,6 +362,19 @@ async function checkIfUserIsPremium(id, client) {
 	return false;
 }
 
+function accountAgeInDays(userOrDate) {
+	try {
+		const createdAt = userOrDate && userOrDate.createdAt ? userOrDate.createdAt : userOrDate;
+		if (!createdAt || !(createdAt instanceof Date)) return 0;
+		const nowMs = Date.now();
+		const ageMs = nowMs - createdAt.getTime();
+		return Math.floor(ageMs / (1000 * 60 * 60 * 24));
+	} catch (e) {
+		return 0;
+	}
+}
+
+
 module.exports = {
 	msToTime,
 	format,
@@ -306,4 +387,8 @@ module.exports = {
 	useItem,
 	resolveCooldown,
 	checkIfUserIsPremium,
+	isUsernameAsciiAlnum,
+	detectInvalidCharType,
+	accountAgeInDays,
+	isAccountLegacy,
 };
