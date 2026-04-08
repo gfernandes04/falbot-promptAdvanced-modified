@@ -374,6 +374,26 @@ function accountAgeInDays(userOrDate) {
 	}
 }
 
+/**
+ * @description Checks a username against heuristics for bot/disposable accounts.
+ * @param {string} username The user's username.
+ * @returns {boolean} Returns `false` if the username is suspicious, `true` otherwise.
+ */
+function hasGoodReputation(username) {
+	// Fail-closed for security: if username is invalid, treat as low reputation.
+	if (!username || typeof username !== 'string') return false;
+
+	// Rule 1: Suspiciously short length
+	if (username.length < 5) return false;
+
+	// Rule 2: Excessive numbers (common in generated names like 'user12345')
+	const digitCount = (username.match(/\d/g) || []).length;
+	if (digitCount >= 4) return false;
+
+	// If no flags are hit, reputation is considered good.
+	return true;
+}
+
 
 module.exports = {
 	msToTime,
@@ -391,4 +411,5 @@ module.exports = {
 	detectInvalidCharType,
 	accountAgeInDays,
 	isAccountLegacy,
+	hasGoodReputation,
 };
