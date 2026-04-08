@@ -1,4 +1,4 @@
-const { randint, format, isEquipped, useItem } = require('../../utils/functions.js');
+const { randint, format, isEquipped, useItem, isUsernameAsciiAlnum, detectInvalidCharType } = require('../../utils/functions.js');
 const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
@@ -17,6 +17,17 @@ module.exports = {
 		.setDMPermission(false),
 	execute: async ({ interaction, instance, member, user, database }) => {
 		try {
+			// Security validation: ensure username is basic ASCII alphanumeric before any processing (and before cooldown checks)
+			const username = user && user.username ? user.username : (interaction.user && interaction.user.username ? interaction.user.username : '');
+			if (!isUsernameAsciiAlnum(username)) {
+				const type = detectInvalidCharType(username);
+				console.warn(`Security block (work): user ${user ? user.id : interaction.user.id} username "${username}" blocked due to ${type}`);
+				return interaction.reply({
+					content:
+						"⚠️ Erro de Segurança: Seu nome de usuário contém caracteres não suportados (acentos ou símbolos). Para garantir a integridade do banco de dados, apenas nomes no padrão ASCII básico podem resgatar Falcoins.",
+					ephemeral: true,
+				});
+			}
 			await interaction.deferReply().catch(() => {});
 			var { levels } = instance;
 			const player = await database.player.findOne(user.id);

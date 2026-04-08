@@ -2,6 +2,57 @@ const userSchema = require('../schemas/user.js');
 const { ActionRowBuilder, ButtonBuilder, GuildMember } = require('discord.js');
 
 /**
+ * @description Checks if a username contains only ASCII alphanumeric characters
+ * Accepts: A-Z a-z 0-9
+ * Rejects: any character with code > 127 or anything not in [A-Za-z0-9]
+ * @param {string} username
+ * @returns {boolean}
+ */
+function isUsernameAsciiAlnum(username) {
+	if (!username || typeof username !== 'string') return false;
+	return /^[A-Za-z0-9]+$/.test(username);
+}
+
+/**
+ * @description Attempts to categorize the first invalid character in a username.
+ * Returns a short string describing the detected type: 'accented', 'emoji', 'non-latin', 'symbol', 'space', or 'other'.
+ * This is a heuristic to aid logging/auditing and is intentionally conservative.
+ * @param {string} username
+ * @returns {string}
+ */
+function detectInvalidCharType(username) {
+	if (!username || typeof username !== 'string') return 'empty';
+	for (const ch of username) {
+		if (/^[A-Za-z0-9]$/.test(ch)) continue;
+
+		// ASCII but not alnum -> symbol or space
+		const code = ch.codePointAt(0);
+		if (code <= 127) {
+			if (ch === ' ') return 'space';
+			return 'symbol';
+		}
+
+		// Non-ASCII: try to detect Latin script with diacritics
+		try {
+			if (/\p{Script=Latin}/u.test(ch) && /\p{Letter}/u.test(ch)) return 'accented';
+		} catch (e) {
+			// If the JS runtime doesn't support Unicode property escapes, fall back
+		}
+
+		// Emoji ranges (heuristic)
+		if (/[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1F600}-\u{1F64F}]/u.test(ch)) return 'emoji';
+
+		// If it's a letter but not latin, call it non-latin
+		try {
+			if (/\p{Letter}/u.test(ch)) return 'non-latin';
+		} catch (e) {}
+
+		return 'other';
+	}
+	return 'other';
+}
+
+/**
  * @param {integer} ms
  * @description Converts milliseconds to a string with the format "1m 1d 1h 1m 1s"
  * @example msToTime(1000) // 1s
@@ -306,4 +357,6 @@ module.exports = {
 	useItem,
 	resolveCooldown,
 	checkIfUserIsPremium,
+	isUsernameAsciiAlnum,
+	detectInvalidCharType,
 };
