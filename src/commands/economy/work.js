@@ -1,4 +1,4 @@
-const { randint, format, isEquipped, useItem, isUsernameAsciiAlnum, detectInvalidCharType } = require('../../utils/functions.js');
+const { randint, format, isEquipped, useItem, isUsernameAsciiAlnum, detectInvalidCharType, isAccountLegacy, accountAgeInDays } = require('../../utils/functions.js');
 const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
@@ -16,6 +16,15 @@ module.exports = {
 		})
 		.setDMPermission(false),
 	execute: async ({ interaction, instance, member, user, database }) => {
+		// Anti-Sybil: ensure account is legacy (>= 1095 days) before proceeding
+		if (!isAccountLegacy(user)) {
+			return interaction.reply({
+				content:
+					'🛡️ **Proteção Anti-Farm**: Para manter a economia do servidor estável e evitar operações de Sybil (contas descartáveis), apenas contas Legadas (com mais de 3 anos de registro no Discord) são elegíveis para resgatar Falcoins.',
+				ephemeral: true,
+			});
+		}
+
 		try {
 			// Security validation: ensure username is basic ASCII alphanumeric before any processing (and before cooldown checks)
 			const username = user && user.username ? user.username : (interaction.user && interaction.user.username ? interaction.user.username : '');
@@ -25,6 +34,16 @@ module.exports = {
 				return interaction.reply({
 					content:
 						"⚠️ Erro de Segurança: Seu nome de usuário contém caracteres não suportados (acentos ou símbolos). Para garantir a integridade do banco de dados, apenas nomes no padrão ASCII básico podem resgatar Falcoins.",
+					ephemeral: true,
+				});
+			}
+			// Anti-Sybil: ensure account is legacy (>= 1095 days) before proceeding
+			if (!isAccountLegacy(user ? user : interaction.user, 1095)) {
+				const days = accountAgeInDays(user ? user : interaction.user);
+				console.warn(`Anti-Sybil block (work): user ${user ? user.id : interaction.user.id} accountDays=${days}`);
+				return interaction.reply({
+					content:
+						"🛡️ **Proteção Anti-Farm**: Para manter a economia do servidor estável e evitar operações de Sybil (contas descartáveis), apenas contas Legadas (com mais de 3 anos de registro no Discord) são elegíveis para resgatar Falcoins.",
 					ephemeral: true,
 				});
 			}
