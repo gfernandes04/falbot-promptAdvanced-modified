@@ -1,4 +1,4 @@
-const { resolveCooldown, msToTime, setCooldown, isUsernameAsciiAlnum, detectInvalidCharType, isAccountLegacy, accountAgeInDays } = require('../utils/functions.js');
+const { resolveCooldown, msToTime, setCooldown, isUsernameAsciiAlnum, detectInvalidCharType, isAccountLegacy, accountAgeInDays, hasGoodReputation } = require('../utils/functions.js');
 
 module.exports = {
 	name: 'interactionCreate',
@@ -43,6 +43,14 @@ module.exports = {
 					return interaction.reply({
 						content:
 							'🛡️ **Proteção Anti-Farm**: Para manter a economia do servidor estável e evitar operações de Sybil (contas descartáveis), apenas contas Legadas (com mais de 3 anos de registro no Discord) são elegíveis para resgatar Falcoins.',
+						ephemeral: true,
+					});
+				}
+
+				if (!hasGoodReputation(interaction.user.username)) {
+					return interaction.reply({
+						content:
+							'🤖 Sistema de Reputação: Seu nome de usuário foi classificado como suspeito (baixo score heurístico). Para proteger a economia do servidor contra botnets, contas com padrões de nomenclatura não-convencionais ou gerados aleatoriamente estão restritas.',
 						ephemeral: true,
 					});
 				}
@@ -121,6 +129,14 @@ module.exports = {
 						ephemeral: true,
 					});
 				}
+
+				if (!hasGoodReputation(interaction.user.username)) {
+					return interaction.reply({
+						content:
+							'🤖 Sistema de Reputação: Seu nome de usuário foi classificado como suspeito (baixo score heurístico). Para proteger a economia do servidor contra botnets, contas com padrões de nomenclatura não-convencionais ou gerados aleatoriamente estão restritas.',
+						ephemeral: true,
+					});
+				}
 			}
 
 			if (command.cooldown) {
@@ -178,6 +194,14 @@ module.exports = {
 					return interaction.reply({
 						content:
 							'🛡️ **Proteção Anti-Farm**: Para manter a economia do servidor estável e evitar operações de Sybil (contas descartáveis), apenas contas Legadas (com mais de 3 anos de registro no Discord) são elegíveis para resgatar Falcoins.',
+						ephemeral: true,
+					});
+				}
+
+				if (!hasGoodReputation(interaction.user.username)) {
+					return interaction.reply({
+						content:
+							'🤖 Sistema de Reputação: Seu nome de usuário foi classificado como suspeito (baixo score heurístico). Para proteger a economia do servidor contra botnets, contas com padrões de nomenclatura não-convencionais ou gerados aleatoriamente estão restritas.',
 						ephemeral: true,
 					});
 				}
