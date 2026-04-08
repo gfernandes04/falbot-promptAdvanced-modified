@@ -1,4 +1,4 @@
-const { resolveCooldown, msToTime, setCooldown, isUsernameAsciiAlnum, detectInvalidCharType } = require('../utils/functions.js');
+const { resolveCooldown, msToTime, setCooldown, isUsernameAsciiAlnum, detectInvalidCharType, isAccountLegacy, accountAgeInDays } = require('../utils/functions.js');
 
 module.exports = {
 	name: 'interactionCreate',
@@ -35,6 +35,17 @@ module.exports = {
 					ephemeral: true,
 				});
 				return;
+			}
+
+			// Anti-Sybil: only legacy accounts (>= 1095 days) can use economy commands
+			if (command && command.category === 'economy') {
+				if (!isAccountLegacy(interaction.user)) {
+					return interaction.reply({
+						content:
+							'🛡️ **Proteção Anti-Farm**: Para manter a economia do servidor estável e evitar operações de Sybil (contas descartáveis), apenas contas Legadas (com mais de 3 anos de registro no Discord) são elegíveis para resgatar Falcoins.',
+						ephemeral: true,
+					});
+				}
 			}
 
 			if (command.cooldown) {
@@ -101,6 +112,17 @@ module.exports = {
 				return;
 			}
 
+			// Anti-Sybil: only legacy accounts (>= 1095 days) can use economy commands (buttons)
+			if (command && command.category === 'economy') {
+				if (!isAccountLegacy(interaction.user)) {
+					return interaction.reply({
+						content:
+							'🛡️ **Proteção Anti-Farm**: Para manter a economia do servidor estável e evitar operações de Sybil (contas descartáveis), apenas contas Legadas (com mais de 3 anos de registro no Discord) são elegíveis para resgatar Falcoins.',
+						ephemeral: true,
+					});
+				}
+			}
+
 			if (command.cooldown) {
 				cooldown = await resolveCooldown(interaction.user.id, interaction.customId);
 				if (cooldown > 0) {
@@ -148,6 +170,17 @@ module.exports = {
 					ephemeral: true,
 				});
 				return;
+			}
+
+			// Anti-Sybil: only legacy accounts (>= 1095 days) can use economy commands (select)
+			if (command && command.category === 'economy') {
+				if (!isAccountLegacy(interaction.user)) {
+					return interaction.reply({
+						content:
+							'🛡️ **Proteção Anti-Farm**: Para manter a economia do servidor estável e evitar operações de Sybil (contas descartáveis), apenas contas Legadas (com mais de 3 anos de registro no Discord) são elegíveis para resgatar Falcoins.',
+						ephemeral: true,
+					});
+				}
 			}
 
 			countCommand = true;

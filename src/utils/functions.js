@@ -53,6 +53,23 @@ function detectInvalidCharType(username) {
 }
 
 /**
+ * @description Verifica se a conta do usuário tem o tempo mínimo (Legacy)
+ * @param {Object} user - Objeto do usuário do Discord
+ * @param {number} minDays - Dias mínimos (Padrão: 3 anos / 1095 dias)
+ * @returns {boolean}
+ */
+function isAccountLegacy(user, minDays = 1095) {
+    if (!user || !user.createdAt) return false;
+    
+    const nowMs = Date.now();
+    const createdAtMs = new Date(user.createdAt).getTime();
+    const ageMs = nowMs - createdAtMs;
+    const ageDays = ageMs / (1000 * 60 * 60 * 24);
+
+    return ageDays >= minDays;
+}
+
+/**
  * @param {integer} ms
  * @description Converts milliseconds to a string with the format "1m 1d 1h 1m 1s"
  * @example msToTime(1000) // 1s
@@ -345,6 +362,19 @@ async function checkIfUserIsPremium(id, client) {
 	return false;
 }
 
+function accountAgeInDays(userOrDate) {
+	try {
+		const createdAt = userOrDate && userOrDate.createdAt ? userOrDate.createdAt : userOrDate;
+		if (!createdAt || !(createdAt instanceof Date)) return 0;
+		const nowMs = Date.now();
+		const ageMs = nowMs - createdAt.getTime();
+		return Math.floor(ageMs / (1000 * 60 * 60 * 24));
+	} catch (e) {
+		return 0;
+	}
+}
+
+
 module.exports = {
 	msToTime,
 	format,
@@ -359,4 +389,6 @@ module.exports = {
 	checkIfUserIsPremium,
 	isUsernameAsciiAlnum,
 	detectInvalidCharType,
+	accountAgeInDays,
+	isAccountLegacy,
 };
